@@ -1,6 +1,6 @@
 Root
 Toor
-Hostnamectl hostname isp
+Hostnamectl hostname ISP
 Exec bash
 Cat /etc/net/ifaces/enp7s1/options
 Mkdir –p /etc/net/ifaces/enp7s{2,3}
