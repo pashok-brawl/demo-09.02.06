@@ -1,0 +1,294 @@
+Root
+Toor
+Hostnamectl hostname isp
+Exec bash
+Cat /etc/net/ifaces/enp7s1/options
+Mkdir –p /etc/net/ifaces/enp7s{2,3}
+Echo ‘TYPE=eth’ | tee /etc/net/ifaces/enp7{2,3}/optioms
+Echo ‘172.16.1.1/28’ > /etc/net/ifaces/enp7s2/ipv4address
+Echo ‘172.16.2.1/28’ > /etc/net/ifaces/enp7s3/ipv4address
+Apt-get update && apt-get install nftables –y
+Cat <<EOF> /etc/nftables/nftables.nft
+#!/usr/sbin/nft-f
+Flush ruleset
+Table ip nat {
+Chain postrouting {
+Type nat hook postrouting priority srcnat;
+Oifname “enp7s1” masquerade
+}
+}
+EOF
+Cat /etc/nftables/nftables.nft
+Systemctl enable –now nftables
+Sed –i ‘s/net/ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/’ /etc/net/sysctl.conf
+Sysctl net.ipv4.ip_forward
+Root
+Toor
+Hostnameclt hostname br-trt.au-team.irpo
+Exec bash
+Mkdir –p /etc/net/ifaces/{enp7s{1,2},gre1}
+Echo ‘TYPE=eth’ | /etc/net/ifaces/enp7s{1,2}/options
+Echo ‘172.16.2.2/28’ > /etc/net/ifaces/enp7s1/ipv4address
+Echo ‘default via 172.16.2.1’ > /etc/net/ifaces/enp7s1/ipv4route
+Echo ‘nameserver 8.8.8.8’ > /etc/net/ifaces/enp7s1/resolv.conf
+Echo ‘192.168.1.1/28’ > /etc/net/ifaces/enp7s2/ipv4address
+Swd –i ‘s/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/’ /etc/net/sysctl.conf
+Cat <<EOF> /etc/net/ifaces/gre1/options
+TYPE=iptun
+TUNTYPE=gre
+TUNLOCAL=172.16.2.2
+TUNREMOTE=172.16.1.2
+TUNTTL=64
+TUNOPTIONS=’ttl 64’
+EOF
+Cat /etc/net/ifaces/gre1/options
+Systemctl restart network
+Ip –br –c a
+Apt-get update && apt-get install sudo tzdata frr nftables –y
+Rm –f /etc/net/ifaces/enp7s1/resolv.conf
+Echo $’search au-team.irpo\nameserver 192.168.100.2’ > /etc/net/ifaces/enp7s2/resolv.conf
+Cat <<EOF> /etc/nftasbles/nftables.nft
+#!/usr/sbin/nft-f
+Flush ruleset
+Table ip nat {
+Chain postrouting {
+Type nat hook chain postrouting priority srcnat;
+Oifname “enp7s1” masquerade
+}
+}
+EOF
+Timedatectl set-timezone Europe/Moscow
+Useradd net_admin
+Echo “net_admin:P@ssw0rd” | chpasswd
+Usermod –Ag wheel net_admin
+Echo “WHEEL_USERS ALL=(ALL:ALL) NOPASSWD: ALL” > etc/sudoers.d/net_admin
+Su –l net_admin
+Sudo id
+Sed –I ‘s/ospfd=no/ospfd=yes/’ /etc/frr/daemons ; grep /etc/frr/daemons
+Cat <<’EOF’> /etc/frr/frr.conf
+Interface gre1
+Ip ospf area 0
+Ip ospf authentication 
+Ip ospf authentication-key P@ssw0rd
+No ip ospf passive
+Exit
+!
+Interface enp7s2
+Ip ospf area 0
+Exit
+!
+Router ospf
+Passive-interface default
+Exit
+EOF
+Systemctl restart network
+Systemctl enable –now nftables frr
+Cat /etc/resolv.conf
+Ip r
+Root
+Toor
+Hostnamectl hostname hq-srv.au-team.irpo
+Exec bash
+Tineadtectl set-timezone Europe/Moscow
+Mkdir –p /etc/net/ifaces/{enp7s{1,2},vlan{100,200,99},gre1}
+Echo ‘TYPE=eth’ | tee /etc/net/ifacec/enp7s{1,2}/options
+Echo ‘172.16.1.2/28’ > /etc/net/ifaces/enp7s1/ipv4address
+Echo ‘default via 172.16.1.1’ > /etc/net/ifaces/enp7s1/ipv4route
+Echo ‘nameserver 8.8.8.8.’ > /etc/net/ifaces/enp7s1/resolv.conf
+Echo $’100\n200\n999’ | xargs –i bash – ‘echo  -e “TYPE=vlan\nHost=enp7s2\nVid+{}” > /etc/net/ifaces/vlan{}/options’
+Cat /etc/net/ifaces/vlan999/options
+Echo ‘192.168.100.1/27” > /etc/net/ifaces/vlan100/ipv4address
+Echo ‘192.168.200.1/28’ > /etc/net/ifaces/vlan200/ipv4address
+Echo ‘192.168.99.1/29’ > /etc/net/ifaces/vlan999/ipv4address
+Sed –i ‘s/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/’/etc/net/sysctl.conf
+Cat <<EOF> /etc/net/ifaces/gre1/options
+TYPE=iptun
+TUNTYPE=gre
+TUNLOCAL=172.16.1.2
+TUNREMOTE=172.16.2.2
+TUNOPTIONS=’ttl 64’
+EOF
+Cat /etc/net/ifaces/gre1/options
+Echo “10.10.10.1/30” > /etc/net/ifaces/gre1/ipv4address
+Systemctl restart network
+Ip –br –c a
+Ping 10.10.10.2 –c 3
+Ping zz.ru –c 2
+Apt-get update && apt-get install sudo tzdata frr dnsmasq nftables –y
+Rm –f /etc/net/ifaces/enp7s1/resolv.conf
+Echo $’search au-team.irpo\nnamserver 1982.168.100.2’ > /etc/net/ifaces/vlan100/resolv.conf
+Cat <<EOF> /etc/nftables/nftables.nft
+#!/usr/sbin/nft-f
+Flush ruleset
+Table ip nat {
+Chain postrouting {
+Type nat hook postrouting priority srcnat;
+Oifname “enp7s1” masquerade
+}
+}
+EOF
+Systemctl enable –now nftables
+Timedatectl set-timezone Europe/Moscow
+Useradd net_admin
+Echo “net_admin:P@ssw0rd” | chpasswd
+Usermod –Ag wheel net_admin
+Echo “WHEEL_USERS ALL=(ALL:ALL) NOPASSWD: ALL” > /etc/sudoers.d/net_admin
+Su –l net_admin
+Sudo id
+Sed –i ‘s/opsfd=no/ospfd=yes/’ /etc/frr/daemons ; grep /etc/frr/daemons
+Cat <<’EOF’> /etc/frr.frr.conf
+Interface gre 
+No ip ospf passive
+Exit
+!
+Interface gre1
+Ip ospf area 0
+Ip ospf authentication 
+Ip ospf authentication-key P@ssw0rd
+No ip ospf passive
+Exit
+!
+Interface vlan100
+Ip ospf area 0
+Exit
+!
+Interface vlan200
+Ip ospf area 0
+Exit
+!
+interface vlan999
+Ip ospf area 0
+Exit
+!
+Router ospf
+Passive-interface default
+Exit
+EOF
+Cat <<’EOF’> /etc/dnsmasq.conf
+Port=0
+Interface=vlan200
+Listen-address=192.168.200.1
+Dhcp-authoritative
+Dhcp-range=interface:vlan200,192.168.200.2,192.168.200.2,255.255.255.240,6h
+Dhcp-option=3,192.168.200.1
+Dhcp-option=6,192.168.100.2
+Leasefile-ro
+EOF
+Systemctl enable –now frr dnsmasq ; ss –lun | grep 67
+Systemctl restart network
+Cat /etc/resolv.conf
+Ip r | grep ospf
+ Root
+Toor
+Hostnamectl hostname HQ-SRV.au-team.irpo
+Exec bash
+Timedatectl set-timezone Europe/Moscow
+Echo ‘TYPE=eth’ > /etc/net/ifaces/enp7s1/options
+Echo ‘192.168.100.2/27’ > /etc/net/ifaces/enp7s1/ipv4address
+Echo ‘default via 192.168.100.1’ > /etc/net/ifaces/enp7s1/ipv4route
+Echo ‘nameserver 8.8.8.8’ > /etc/net/ifaces/enp7s1/resolv.conf
+Systemctl restart network
+Ping zz.ru –c 3
+Useradd –u 2026 sshuser
+Echo “sshuser:P@ssw0rd” | chpasswd
+Usermod –Ag wheel sshuser
+Echo “WHEEL_USERS ALL=(ALL:ALL) NOPASSWD: ALL” > /etc/sudoers.d/sshuser
+Su –l sshuser
+Sudo id
+Echo “Authorized access only” > /etc/opnessh/banner
+Echo –e “Port 2026\nMaxAuthTries 2\nAllowUser shhuser\nBanner /etc/openssh/banner\n” >> /etc/openssh/sshd_config
+Systemctl restart sshd
+Ss –ltnp | grep sshd
+Ssh sshuser@127.0.0.1 –p 2026
+Apt-get update && apt-get install bind bind utills –y
+Echo $’search au-team.irpo\nnameserver 127.0.0.1’ > /etc/net/ifaces/enp7s1/resolv.conf
+Rndc-confgen –a –c /etc/bein/rndc.key
+
+Cat <<’EOF’> /etc/bind/options.conf
+Logging {};
+Options {
+Listen-on {localnets; 127.0.0.1; };
+Forwarders { 77.88.8.7; 77.88.8.3; };
+Recursion yes;
+Allow-recursion {any; };
+Allow-query {any; };
+Dnssec-vallidation no;
+Directory “/etc/bind/zone”
+Dump-file “/var/run/named/named_dump.db”;
+Statistics-file “/var/run/named/named.stats”;
+Recursing-file “/var/run/named/named.scroots”;
+Pid-file none;
+};
+Zone “au-team.irpo” {
+Type master;
+File “au-tem.irpio”;
+};
+Zone “168.192.in-addr.arpa”;
+Type master
+File “168.192.in-addr.arpa”;
+};
+EOF
+Cat <<’EOF’> /etc/bind/zone/au-team.irpo
+$TTL Ld
+@ IN SOA au-team.irpo. root.au-team.irpo. (
+2025020600 ; serial
+12H ; refresh
+1H ; retry
+1W ; expire
+1H ; ncache
+)
+@ IN NS hq-srv.au-team.irpo.
+Hq-rtr IN A 192.168.100.1
+Hq-srv IN A 192.178.100.2
+Hq-cli IN A 192.168.200.2
+Br-rtr IN A 192.168.1.1
+Br-srv IN A 192.168.1.2
+Docker IN A 172.16.1.1
+Web IN A 172.16.2.1
+EOF
+Cat <<’EOF’> /etc/bind/zone/168.192.in-addr.arpa
+$TTL Ld
+@ IN SOA au-team.irpo. root.au-team.irpo. (
+2025020600 ; serial
+12H ; refresh
+1H ; retry
+1W ; expire
+1H ; ncache
+)
+IN NS au-team.irpo.
+1.100 IN PTR hq-rtr.au-team.irpo.
+2.100 IN PTR hq-srv.au-team.ri[o.
+2.200 IN PTR hq-cli.au-team.irpo.
+EOF
+Chown :named /etc/bind/zone/au-team.irpo /etc/bind/zone/168.192.in-addr.arpa
+Systemctl enable –now bind
+Service network restart
+Host br-rtr
+Host –t PTR 192.168.100.2
+Root
+Toor
+Hostnamectl hostname BR-SRV.au-team.irpo
+Exec bash
+Timedatectl set-timezone Europe/Moscow
+Echo ‘TYPE=eth’ > /etc/net/ifaces/enp7s1/options
+Echo ‘192.168.1.2/26’ > /etc/net/ifaces/enp7s1/ipv4address
+Echo ‘default via 192.168.1.1’ > /etc/net/ifaces/enp7s1/ipv4route
+Echo $’search au-team.irpo\nameserver 192.168.100.2’ > /etc/net/ifaces/enp7s1/resolv.conf
+Systemctl restart network
+Ping hq-srv –c 3
+Useradd –u 2026 sshuser
+Echo “sshuser:P@ssw0rd” | chpasswd
+Usermod –Ag wheel sshuser
+Echo “WHEEL_USERS ALL=(ALL:ALL) NOPASSWD: ALL” > /etc/sudoers.d/sshuser
+Su –l sshuser
+Sudo id
+Echo “Authorized access only” > /etc/openssh/banner
+Echo –e “Port 2026\nMaxAuthTries 2\nAllowUsers sshyser\nBanner /etc/opnessh/banner\n” >> /etc/openssh/sshd_config
+Systemctl restart sshd
+Ss –ltnp | grep sshd
+Root
+Toor
+Hostnamectl hostname HQ-CLI.au-team.irpo
+Exec bash
+Timedatectl set-timezone Europe/Moscow
+Ip –br –c a
